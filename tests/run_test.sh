@@ -29,4 +29,4 @@ if [ ! -d data ]; then
 
 fi
 
-../bin/faro_recognize --detect-thresh 0.5 -m matches -f faces -d detections.csv -a attributes.csv -s scores.csv data
+python3 ../bin/faro_recognize --detect-thresh 0.5 -m matches -f faces -d detections.csv -a attributes.csv -s scores.csv data
