@@ -179,9 +179,11 @@ message FaceRecord{
 	string subject_id = 1;
 	string name = 5;
 	string source = 4;
+	int64 frame = 14;
 	string notes = 6;
+	string gallery_key = 15;
 
-	Image view = 7;                        // A cropped and scaled image to be viewed by humans.
+	Image view = 7;                        // A cropped and scaled image to be viewed by humans, similar to a passport photo.
 	Image aligned = 9;                     // An aligned image used for template extraction.
 
 	Detection detection = 2;               // The detection rectangle etc.
@@ -189,12 +191,16 @@ message FaceRecord{
 	repeated Attribute attributes = 10;    // smiling, glasses, gender, race, ...
 	repeated Attribute internal_data = 11; // a dictionary used to store algorithm specific data about the face.
 	FaceTemplate template = 3;             // A small encoding used for fast face matching.
+
+	float score = 12;               // A score indicating the similarity in a search results list
+
+	FaceRecordList search_results = 13;    // A list of matching faces
 }
 
 
 message FaceRecordList{
 	repeated FaceRecord face_records = 1;
-	repeated float scores = 2; // Scores returned by gallery searches
+	//repeated float scores = 2; // Scores returned by gallery searches
 }
 
 
@@ -213,7 +219,7 @@ message VerificationResponse{
 }
 
 message SearchRequest{
-	string gallery_name = 1;
+	string search_gallery = 1;
 	FaceRecordList probes = 3;
 	int32 max_results = 4;
 	float threshold = 5;
@@ -221,11 +227,11 @@ message SearchRequest{
 
 message SearchResponse{
 	ErrorMessage message = 1;
-	repeated FaceRecordList matches = 2;
+	FaceRecordList probes = 2;
 }
 
 message EnrollRequest{
-	string gallery_name = 1;
+	string enroll_gallery = 1;
 	FaceRecordList records = 2;
 	EnrollOptions enroll_options = 10;
 }
@@ -233,7 +239,9 @@ message EnrollRequest{
 message DetectRequest{
 	Image image = 1;
 	string source = 2;
-	string subject_id = 3;
+	int64 frame = 3;
+	string subject_id = 4;
+	string subject_name = 5;
 	DetectionOptions detect_options = 8;
 }
 
@@ -243,44 +251,63 @@ message ExtractRequest{
 	ExtractOptions extract_options = 9;
 }
 
-message DetectExtractRequest{
-	Image image = 1;
-	string source = 2;
-	string subject_id = 3;
-	//FaceRecordList records = 4;
-	DetectionOptions detect_options = 8;
-	ExtractOptions extract_options = 9;
-}
-
-
 message ScoreRequest{
-	// suggested : typically use TemplateLists because they are smaller. Then
-	//             FaceRecordLists should be left empty.
-	// 
-	// FaceRecordsList can be used as a convieniance but may be too large, 
-	// slow, or use to much band with.
-	
-	FaceRecordList face_probes 		= 1;
-	FaceRecordList face_gallery 	= 2;
-	TemplateList   template_probes 	= 3;
-	TemplateList   template_gallery = 4;
+    // suggested : typically use TemplateLists because they are smaller. Then
+    //             FaceRecordLists should be left empty.
+    //
+    // FaceRecordsList can be used as a convieniance but may be too large,
+    // slow, or use to much band with.
+
+    FaceRecordList face_probes      = 1;
+    FaceRecordList face_gallery     = 2;
+    TemplateList   template_probes  = 3;
+    TemplateList   template_gallery = 4;
 }
 
 
-message FaceStatusRequest{
-	
+
+
+/****************************************************************************
+ * Combined operations
+ *
+ * These allow calling the server once and executing multiple operations in
+ * sequence.  This should save time and network bandwidth for common
+ * operations.  When calling combined results some arguments from the
+ * later calls will be ignored and if present then replaced by the results
+ * of the earlier calls.  It is recommended that those arguments are left
+ * empty to save bandwidth.
+ ***************************************************************************/
+message DetectExtractRequest{
+    DetectRequest  detect_request  = 1;
+    ExtractRequest extract_request = 2; // The image and face list are replaced by the result of the detect results.
 }
+
+message DetectExtractEnrollRequest{
+    DetectRequest  detect_request  = 1;
+    ExtractRequest extract_request = 2; // The image and face list are replaced by the result of the detect results.
+    EnrollRequest  enroll_request  = 3; // The face list is replaced by the result of the extract results.
+}
+
+message DetectExtractSearchRequest{
+    DetectRequest  detect_request  = 1;
+    ExtractRequest extract_request = 2; // The image and face list are replaced by the result of the detect results.
+    SearchRequest  search_request  = 3; // The face list is replaced by the result of the extract results.
+}
+
+
+
+message FaceStatusRequest{ }
 
 message FaceServiceInfo{
 	ServiceStatus  	status 				= 1;
 	int32          	worker_count 		= 2;
-	bool    		detection_support 	= 3;
-	bool    		extract_support 	= 4;
-	bool    		score_support 		= 5;
+	bool    		    detection_support 	= 3;
+	bool    		    extract_support 	    = 4;
+	bool    		    score_support 		= 5;
 	bool           	attribute_support 	= 6;
 	ScoreType 		score_type 			= 7;
 	float 			detection_threshold = 8;
-	float 			match_threshold 	= 9;
+	float 			match_threshold 	    = 9;
 	string 			algorithm 			= 10;
 	string 			notes 				= 11;
 }
@@ -297,11 +324,13 @@ service FaceRecognition{
 	rpc detect(DetectRequest) returns (FaceRecordList){}; // Run face detection on an image
 	rpc extract(ExtractRequest) returns (FaceRecordList){}; // Extract face templates for matching
 	rpc score(ScoreRequest) returns (Matrix){}; // returns a distance matrix of size (probeXgallery)
-	rpc enroll(EnrollRequest) returns (ErrorMessage){}; // Enroll faces in a gallery
-	rpc search(SearchRequest) returns (SearchResponse){}; // Search a gallery
+	rpc enroll(EnrollRequest) returns (FaceRecordList){}; // Enroll faces in a gallery
+	rpc search(SearchRequest) returns (FaceRecordList){}; // Search a gallery
 	
 	// Combined opperations
-	rpc detectExtract(DetectExtractRequest) returns (FaceRecordList){};
+    rpc detectExtract(DetectExtractRequest) returns (FaceRecordList){};
+    rpc detectExtractEnroll(DetectExtractEnrollRequest) returns (FaceRecordList){};
+    rpc detectExtractSearch(DetectExtractSearchRequest) returns (FaceRecordList){};
 
 	rpc echo(Matrix) returns (Matrix){}; // test large messages
 

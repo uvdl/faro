@@ -2,8 +2,7 @@
 
 HOST=0.0.0.0
 PORT=50030
-WORKER_COUNT=3
-
+WORKER_COUNT=1
 if lsof -i:$PORT
 then
     echo ERROR - Port $PORT is in use.
@@ -12,7 +11,12 @@ fi
 
 #!/bin/bash
 
-FARO_STORAGE=~/faro_storage
+
+if [[ -z "${FARO_STORAGE}" ]]; then
+  FARO_STORAGE=${HOME}/faro_storage
+fi
+
+
 RESNET_MODEL=$FARO_STORAGE/models/dlib_face_recognition_resnet_model_v1.dat
 LANDMARK_MODEL=$FARO_STORAGE/models/shape_predictor_5_face_landmarks.dat
 
@@ -23,7 +27,7 @@ if [[ ! -f "$RESNET_MODEL" ]]; then
 	echo "Downloading dlib resnet model..."
 	wget http://dlib.net/files/dlib_face_recognition_resnet_model_v1.dat.bz2
 	bunzip2 dlib_face_recognition_resnet_model_v1.dat.bz2
-	mv dlib_face_recognition_resnet_model_v1.dat ~/faro_storage/models/
+	mv dlib_face_recognition_resnet_model_v1.dat $FARO_STORAGE/models/
 fi
 
 
@@ -31,7 +35,7 @@ if [[ ! -f "$LANDMARK_MODEL" ]]; then
 	echo "Downloading dlib landmark model..."
 	wget http://dlib.net/files/shape_predictor_5_face_landmarks.dat.bz2
 	bunzip2 shape_predictor_5_face_landmarks.dat.bz2
-	mv shape_predictor_5_face_landmarks.dat ~/faro_storage/models/
+	mv shape_predictor_5_face_landmarks.dat $FARO_STORAGE/models/
 fi
 
 
@@ -39,4 +43,4 @@ fi
 #c93227f4b3fbc60cf3b32a565ec22ed37217ad03  dlib_face_recognition_resnet_model_v1.dat.bz2
 #cd47b9dd2c67052e8695f693b50d3e7c828290f6  shape_predictor_5_face_landmarks.dat.bz2
 
-nice python3 -m faro.FaceService --port=$HOST:$PORT --worker-count=$WORKER_COUNT --algorithm=dlib
+python3 -m faro.FaceService --port=$HOST:$PORT --worker-count=$WORKER_COUNT --algorithm=dlib

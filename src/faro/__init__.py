@@ -21,12 +21,12 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 '''
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
-DEFAULT_PORT = "localhost:50030"
+DEFAULT_PORT = "0.0.0.0:50030"
 DEFAULT_MAX_MESSAGE_SIZE = 64*1024*1024 # 64MB
 DEFAULT_MAX_ASYNC = 8 # The maximum number of async client calls at a time.
-
+DEFAULT_MAX_SIZE = 1920
 
 
 
@@ -35,6 +35,7 @@ from .FaceWorker import FaceWorker, SCORE_L1, SCORE_L2, SCORE_DOT, SCORE_SERVER,
 #from faro.face_workers import VggFaceWorker
 #from faro.face_workers import RcnnFaceWorker
 from .util import loadKeras
+from .FaceCommandLine import face_command_line
 
 from .FaceGallery import Gallery
 

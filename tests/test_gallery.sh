@@ -40,11 +40,11 @@ if [ ! -d data ]; then
 fi
 
 
-python3 ../bin/faro_recognize --enroll potus --subject-id=0043 --name="George W. Bush" gallery/bush.jpg
-python3 ../bin/faro_recognize --enroll potus --subject-id=0044 --name="Barack Obama"   gallery/obama.jpg
-python3 ../bin/faro_recognize --enroll potus --subject-id=0045 --name="Donald Trump"   gallery/trump.jpg
+python3 -m faro.FaceClient enroll --maximum-size=1024 --gallery potus --subject-id=0043 --name="George W. Bush" gallery/bush.jpg
+python3 -m faro.FaceClient enroll --maximum-size=1024 --gallery  potus --subject-id=0044 --name="Barack Obama"   gallery/obama.jpg
+python3 -m faro.FaceClient enroll --maximum-size=1024 --gallery  potus --subject-id=0045 --name="Donald Trump"   gallery/trump.jpg
 
-python3 ../bin/faro_recognize --search potus --search-log=search_log  data
+python3 -m faro.FaceClient search --gallery potus --search-log=search_log -s search.csv data
 
 
 
